@@ -1,0 +1,23 @@
+# secrets -- never commit
+secrets/*
+!secrets/.env.example
+*.env
+.env
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# state / logs
+*.sqlite
+*.sqlite3
+*.db
+logs/
+*.log
+
+# os
+.DS_Store
+Thumbs.db

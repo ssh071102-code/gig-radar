@@ -1,0 +1,29 @@
+reddit:
+  enabled: false          # using the logged-out .rss route instead (see rss.feeds); no
+                          # Reddit app needed unless you flip this to true
+  subreddits: [forhire, hiring, jobbit, SaaS, artificial]
+  keywords: [AI, automation, LLM, GPT, Claude, chatbot, "AI video", agent, integration, workflow]
+  limit_per_sub: 50
+rss:
+  enabled: true
+  # browser UA: works around Reddit and others blocking feedparser's default UA
+  # (fine for low personal volume; set up a real app if you hit real rate limits)
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+  request_delay: 2.0      # polite delay between feeds (seconds), avoids 429s from Reddit's logged-out .rss route
+  # keyword filter (only applied if configured): filter for relevance at fetch time to save downstream scoring tokens
+  keywords: [AI, automation, LLM, GPT, Claude, chatbot, "AI video", agent, integration, workflow]
+  feeds:
+    - https://weworkremotely.com/categories/remote-programming-jobs.rss
+    - https://remoteok.com/remote-dev+ai-jobs.rss
+    # r/forhire carries both directions ([Hiring] clients vs [FOR HIRE] peers) -> only
+    # search [Hiring] posts to avoid peer noise
+    - "https://www.reddit.com/r/forhire/search.rss?q=title%3AHiring&restrict_sr=on&sort=new"
+    - https://www.reddit.com/r/jobbit/new/.rss
+    - https://www.reddit.com/r/hiring/new/.rss
+  # hn_algolia: not yet implemented (v1.1) -- don't rely on it
+upwork:
+  enabled: true         # manual review board only, best-effort
+  saved_searches:
+    - "https://www.upwork.com/nx/search/jobs/?q=AI%20automation&sort=recency"
+x:
+  enabled: false        # reserved for v1.1

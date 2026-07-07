@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item>
+    <title>Looking for AI automation developer</title>
+    <link>https://example.com/job/1</link>
+    <guid>job-1</guid>
+    <description>Need someone to build an LLM workflow. Budget $3000.</description>
+    <pubDate>Mon, 07 Jul 2026 10:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

@@ -1,0 +1,7 @@
+runtime: vps            # vps | local (documentation flag only; deploy scripts branch on this)
+top_n: 8               # step 4: only draft proposals for the top N leads
+triage_model: claude-haiku-4-5-20251001
+draft_model: claude-sonnet-4-6   # use a stronger model here since only top-N leads reach this step
+token_budget_per_run: 400000   # hard cap per run; truncate + warn if exceeded
+min_score_to_push: 55          # leads scoring below this are not pushed
+enrich: true                   # step 4: whether to fetch a public page for extra context

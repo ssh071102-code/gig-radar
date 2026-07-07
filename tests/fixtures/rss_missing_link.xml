@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>Has link</title><link>https://example.com/ok</link><description>d</description></item>
+  <item><title>No link no guid</title><description>orphan item</description></item>
+</channel></rss>
