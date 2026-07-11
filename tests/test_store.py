@@ -1,3 +1,7 @@
+import sqlite3
+
+import pytest
+
 from gig_radar.models import Lead
 from gig_radar.store import LeadStore
 
@@ -45,9 +49,8 @@ def test_all_skips_corrupt_row(tmp_path):
     leads = s.all()                                            # should not raise
     assert [l.id for l in leads] == ["reddit:1"]               # the corrupt row is skipped
 
-def test_validate_assignment_rejects_bad_status(tmp_path):
-    import pytest
-    from pydantic import ValidationError
-    l = _lead()
-    with pytest.raises(ValidationError):
-        l.status = "bogus_status"
+def test_context_manager_closes_connection(tmp_path):
+    with LeadStore(tmp_path / "db.sqlite") as s:
+        s.upsert(_lead())
+    with pytest.raises(sqlite3.ProgrammingError):        # connection is closed on exit
+        s.conn.execute("SELECT 1")

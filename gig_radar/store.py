@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 from pathlib import Path
-from gig_radar.models import Lead
+from gig_radar.models import Lead, Status
 
 log = logging.getLogger("gig_radar")
 
@@ -66,9 +66,18 @@ class LeadStore:
             out.append(l)
         return out
 
-    def mark(self, lead_id: str, status: str) -> None:
+    def mark(self, lead_id: str, status: Status) -> None:
         lead = self.get(lead_id)
         if lead is None:
             return
         lead.status = status
         self.upsert(lead)
+
+    def close(self) -> None:
+        self.conn.close()
+
+    def __enter__(self) -> "LeadStore":
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        self.close()

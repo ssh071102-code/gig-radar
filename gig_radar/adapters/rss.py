@@ -46,23 +46,23 @@ class RssAdapter(SourceAdapter):
                 time.sleep(self.request_delay)            # polite delay, avoids 429s from Reddit and others
             try:
                 parsed = self._load(feed)
-            except Exception as e:                        # noqa: BLE001 isolate per-feed failures
-                log.warning("RSS feed failed: %s (%r)", feed, e)
+            except Exception as exc:                      # noqa: BLE001 isolate per-feed failures
+                log.warning("RSS feed failed: %s (%r)", feed, exc)
                 continue
             if getattr(parsed, "bozo", 0) and not parsed.entries:
                 log.warning("RSS feed possibly failed: %s (%r)", feed,
                             getattr(parsed, "bozo_exception", None))
-            for e in parsed.entries:
-                link = e.get("link", "") if hasattr(e, "get") else ""
+            for entry in parsed.entries:
+                link = entry.get("link", "") if hasattr(entry, "get") else ""
                 if not link:
                     continue                              # no link means we can't dedup reliably, skip
-                title = e.get("title", "")
-                body = e.get("description", "") or e.get("summary", "")
+                title = entry.get("title", "")
+                body = entry.get("description", "") or entry.get("summary", "")
                 if not self._matches(f"{title}\n{body}"):
                     continue                              # keyword filter (only applied if configured)
                 posted = None
-                if getattr(e, "published_parsed", None):
-                    posted = datetime(*e.published_parsed[:6], tzinfo=timezone.utc)
+                if getattr(entry, "published_parsed", None):
+                    posted = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
                 items.append(RawItem(
                     source="rss",
                     external_id=str(link),

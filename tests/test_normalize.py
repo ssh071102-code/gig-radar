@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from gig_radar.models import Lead, RawItem
 
 
@@ -32,3 +35,9 @@ def test_raw_to_lead_sets_fetched_at():
     assert lead.id == lead_id("rss", "g1")
     assert lead.fetched_at is not None
     assert lead.status == "new"
+
+
+def test_validate_assignment_rejects_bad_status():
+    lead = Lead(id="reddit:1", source="reddit", url="http://x", title="t", raw_text="b")
+    with pytest.raises(ValidationError):
+        lead.status = "bogus_status"
