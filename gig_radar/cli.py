@@ -10,6 +10,7 @@ from gig_radar.store import LeadStore
 from gig_radar.llm import LLM
 from gig_radar.pipeline import run_pipeline
 from gig_radar.push.telegram import TelegramTarget
+from gig_radar.templates import POSITIONING_TEMPLATE
 from gig_radar.adapters.rss import RssAdapter
 from gig_radar.adapters.reddit import RedditAdapter
 from gig_radar.adapters.upwork import UpworkBoardAdapter
@@ -68,7 +69,14 @@ def _run(dry_run: bool, config_dir: Optional[Path] = None):
     _require_env("ANTHROPIC_API_KEY")
     if not dry_run:
         _require_env("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID")
-    positioning = (config_dir / "positioning.md").read_text("utf-8")
+    positioning_path = config_dir / "positioning.md"
+    if not positioning_path.exists():
+        raise typer.BadParameter(
+            f"no positioning file at {positioning_path}. "
+            "Run `gig-radar init-positioning` to generate one, then edit it -- "
+            "scoring and drafting are anchored to it."
+        )
+    positioning = positioning_path.read_text("utf-8")
     store = LeadStore(root / "data" / "leads.sqlite")
     llm = LLM(api_key=env("ANTHROPIC_API_KEY"), base_url=env("ANTHROPIC_BASE_URL"))
     s = cfg.settings
@@ -102,37 +110,8 @@ def init_positioning(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
         typer.echo(f"Already exists: {path}")
         raise typer.Exit()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(_POSITIONING_TEMPLATE, encoding="utf-8")
+    path.write_text(POSITIONING_TEMPLATE, encoding="utf-8")
     typer.echo(f"Template generated: {path} -- review and edit before use")
-
-
-_POSITIONING_TEMPLATE = """# Positioning & Case Studies
-
-## One-line positioning
-I help <ideal client> achieve <outcome> using AI integration, automation, and AI video.
-
-## Case cards
-### Case 1: <case study title>
-- What was built:
-- Result:
-- Transferable to:
-
-### Case 2: <case study title>
-- What was built:
-- Result:
-- Transferable to:
-
-### Case 3: <case study title>
-- What was built:
-- Result:
-- Transferable to:
-
-## Rate anchor
-- $/hr or fixed-price range:
-
-## Tone
--
-"""
 
 
 if __name__ == "__main__":

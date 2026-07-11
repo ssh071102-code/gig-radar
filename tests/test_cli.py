@@ -40,3 +40,22 @@ def test_init_positioning_never_overwrites(tmp_path):
     assert result.exit_code == 0
     assert (tmp_path / "positioning.md").read_text("utf-8") == "mine"
     assert "Already exists" in result.output
+
+
+def test_committed_example_matches_template():
+    """config/positioning.example.md is a rendered copy of the single template source;
+    this guards against the two drifting apart."""
+    from pathlib import Path
+    from gig_radar.templates import POSITIONING_TEMPLATE
+    example = Path(__file__).parent.parent / "config" / "positioning.example.md"
+    assert example.read_text("utf-8") == POSITIONING_TEMPLATE
+
+
+def test_run_without_positioning_points_at_init(monkeypatch, tmp_path):
+    (tmp_path / "settings.yaml").write_text(
+        "top_n: 1\nmin_score_to_push: 55\ntriage_model: t\ndraft_model: d\n", encoding="utf-8")
+    (tmp_path / "sources.yaml").write_text("rss:\n  enabled: false\n", encoding="utf-8")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    result = CliRunner().invoke(cli.app, ["dry-run", "--config-dir", str(tmp_path)])
+    assert result.exit_code != 0
+    assert "init-positioning" in result.output

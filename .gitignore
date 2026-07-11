@@ -21,3 +21,6 @@ logs/
 # os
 .DS_Store
 Thumbs.db
+
+# user-local positioning (generate with: gig-radar init-positioning)
+config/positioning.md
