@@ -1,6 +1,19 @@
 [project]
 name = "gig-radar"
 version = "0.1.0"
+description = "Freelance lead-gen pipeline: multi-source ingestion, LLM triage and scoring, tailored proposal drafts, Telegram delivery."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Laurin Lin" }]
+keywords = ["llm", "automation", "lead-generation", "freelance", "telegram", "anthropic"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Software Development :: Libraries",
+]
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.27",
@@ -18,6 +31,10 @@ dev = ["pytest>=8.0", "pytest-mock>=3.12", "respx>=0.21"]
 
 [project.scripts]
 gig-radar = "gig_radar.cli:app"
+
+[project.urls]
+Repository = "https://github.com/ssh071102-code/gig-radar"
+Issues = "https://github.com/ssh071102-code/gig-radar/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
