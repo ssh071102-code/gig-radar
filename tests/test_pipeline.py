@@ -108,6 +108,45 @@ def test_run_pipeline_push_failure_not_marked(tmp_path):
     leads = store.all()
     assert len(leads) == 1 and leads[0].status == "scored"   # never mistakenly marked pushed
 
+def test_run_pipeline_backlog_pushed_on_later_run(tmp_path):
+    """A lead that clears min_score but misses the top_n cutoff is not lost: it stays
+    in the scored backlog and is pushed on the next run."""
+    scores = {"job 1": 90, "job 2": 91, "job 3": 92}
+
+    class ThreeAdapter:
+        name = "three"
+        def fetch(self):
+            return [RawItem(source="rss", external_id=str(i), url=f"http://x/{i}",
+                            title=title, raw_text="b")
+                    for i, title in enumerate(scores)]
+
+    def fake_triage(leads, positioning, llm, model):
+        for lead in leads:
+            lead.score = scores[lead.title]
+            lead.status = "scored"
+            lead.channel_action = "comment"
+        return leads
+
+    def fake_draft(lead, positioning, llm, model, enrich):
+        lead.draft = "d"
+        return lead
+
+    pushed = []
+    def fake_push(leads, token, chat_id):
+        pushed.extend(leads)
+        return list(leads)
+
+    store = LeadStore(tmp_path / "db.sqlite")
+    kwargs = dict(adapters=[ThreeAdapter()], store=store, positioning="POS", llm=None,
+                  triage_model="t", draft_model="d", top_n=1, min_score=55,
+                  telegram=("TOK", "42"), dry_run=False, enrich=False,
+                  _triage=fake_triage, _draft=fake_draft, _push=fake_push)
+    run_pipeline(**kwargs)
+    assert [lead.score for lead in pushed] == [92]      # first run: only the best lead
+    run_pipeline(**kwargs)                               # second run: no new leads arrive
+    assert [lead.score for lead in pushed] == [92, 91]   # backlog lead 91 is not lost
+
+
 def test_run_pipeline_below_min_not_pushed(tmp_path):
     def fake_triage(leads, positioning, llm, model):
         for l in leads: l.score = 10; l.status = "scored"; l.channel_action = "comment"

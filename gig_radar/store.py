@@ -38,8 +38,18 @@ class LeadStore:
         return Lead.model_validate_json(row["data"]) if row else None
 
     def all(self) -> list[Lead]:
+        rows = self.conn.execute("SELECT data FROM leads").fetchall()
+        return self._parse_rows(rows)
+
+    def by_status(self, status: str) -> list[Lead]:
+        """All leads currently in the given status (e.g. the scored-but-unpushed backlog)."""
+        rows = self.conn.execute("SELECT data FROM leads WHERE status=?", (status,)).fetchall()
+        return self._parse_rows(rows)
+
+    @staticmethod
+    def _parse_rows(rows) -> list[Lead]:
         out = []
-        for r in self.conn.execute("SELECT data FROM leads").fetchall():
+        for r in rows:
             try:
                 out.append(Lead.model_validate_json(r["data"]))
             except Exception as e:                      # noqa: BLE001 isolate per-row failures

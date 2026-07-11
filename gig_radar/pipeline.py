@@ -39,11 +39,22 @@ def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
     dry-run has no persistence side effects (a clean preview)."""
     fresh, errors = ingest(adapters, store)
     scored = _triage(fresh, positioning, llm, triage_model)
-    n_unscored = sum(1 for l in scored if l.status == "unscored")
+    n_unscored = sum(1 for lead in scored if lead.status == "unscored")
     log.info("ingested %d fresh; scored %d; unscored %d (retry next run); source errors=%s",
              len(fresh), len(scored) - n_unscored, n_unscored, errors)
 
-    top = [l for l in scored if l.score is not None and l.score >= min_score][:top_n]
+    # Push candidates come from the union of this run's scored leads and the store's
+    # backlog of scored-but-never-pushed leads. Without the backlog, a lead that clears
+    # min_score on a busy day but misses the top_n cutoff would be persisted as seen
+    # and then silently lost forever -- it surfaces on the next quieter run instead.
+    pool = {lead.id: lead for lead in store.by_status("scored")}
+    for lead in scored:
+        if lead.status == "scored":
+            pool[lead.id] = lead
+    eligible = sorted(
+        (lead for lead in pool.values() if lead.score is not None and lead.score >= min_score),
+        key=lambda lead: lead.score, reverse=True)
+    top = eligible[:top_n]
     for lead in top:
         _draft(lead, positioning, llm, draft_model, enrich)
 
@@ -56,9 +67,11 @@ def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
     else:
         # Only persist leads that scored successfully (unscored ones are retried next
         # run, never dropped silently).
-        for l in scored:
-            if l.status == "scored":
-                store.upsert(l)
+        for lead in scored:
+            if lead.status == "scored":
+                store.upsert(lead)
+        for lead in top:
+            store.upsert(lead)                      # persist drafts (backlog leads included)
         pushed = _push(top, token, chat_id)         # returns the leads pushed successfully
         for lead in pushed:
             store.mark(lead.id, "pushed")
