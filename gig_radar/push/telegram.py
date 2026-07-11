@@ -3,6 +3,8 @@ from typing import NamedTuple
 
 import httpx
 
+from gig_radar.models import Lead
+
 log = logging.getLogger("gig_radar")
 
 
@@ -14,7 +16,7 @@ class TelegramTarget(NamedTuple):
     chat_id: str
 
 
-def format_lead(lead) -> str:
+def format_lead(lead: Lead) -> str:
     action = (lead.channel_action or "?").replace("_", " ")
     parts = [
         f"Score: {lead.score} | Category: {lead.category or '?'} | Suggested channel: {action}",
@@ -31,7 +33,7 @@ def format_lead(lead) -> str:
     return "\n".join(parts)
 
 
-def push_digest(leads, token: str, chat_id: str) -> list:
+def push_digest(leads: list[Lead], token: str, chat_id: str) -> list[Lead]:
     """Step 5: send one Telegram message per lead. Returns the leads that were pushed
     successfully. A single failure never takes down the rest, is never mistakenly
     marked as pushed, and the token-bearing URL is never logged."""

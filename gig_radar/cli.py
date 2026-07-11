@@ -5,6 +5,7 @@ from typing import Optional
 
 import typer
 
+from gig_radar.adapters.base import SourceAdapter
 from gig_radar.config import load_config, env
 from gig_radar.store import LeadStore
 from gig_radar.llm import LLM
@@ -31,7 +32,7 @@ def _root() -> Path:
     return Path(home).expanduser() if home else Path.cwd()
 
 
-def _build_adapters(sources: dict):
+def _build_adapters(sources: dict) -> list[SourceAdapter]:
     adapters = []
     if sources.get("reddit", {}).get("enabled"):
         r = sources["reddit"]
@@ -61,7 +62,7 @@ def _require_env(*keys: str) -> None:
         )
 
 
-def _run(dry_run: bool, config_dir: Optional[Path] = None):
+def _run(dry_run: bool, config_dir: Optional[Path] = None) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     root = _root()
     config_dir = Path(config_dir) if config_dir else root / "config"

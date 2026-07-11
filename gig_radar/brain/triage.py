@@ -2,6 +2,8 @@ import logging
 import re
 
 from gig_radar.brain.persona import resolve_persona
+from gig_radar.llm import SupportsComplete
+from gig_radar.models import Lead
 
 log = logging.getLogger("gig_radar")
 
@@ -25,7 +27,7 @@ def _field(text: str, key: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
-def _user_prompt(lead, positioning: str) -> str:
+def _user_prompt(lead: Lead, positioning: str) -> str:
     return (
         f"POSITIONING:\n{positioning}\n\n"
         f"LEAD (id={lead.id}, source={lead.source}):\n"
@@ -33,7 +35,8 @@ def _user_prompt(lead, positioning: str) -> str:
     )
 
 
-def triage(leads, positioning, llm, model, persona=None):
+def triage(leads: list[Lead], positioning: str, llm: SupportsComplete, model: str,
+           persona: dict | None = None) -> list[Lead]:
     """Step 3: score each lead and write the result back. Failures are marked unscored
     (never dropped -- retried next run). Returns leads sorted by score descending."""
     system = SYSTEM_TEMPLATE.format(**resolve_persona(persona))

@@ -1,14 +1,20 @@
 import logging
-from gig_radar.normalize import raw_to_lead
-from gig_radar.store import LeadStore
-from gig_radar.brain.triage import triage as _real_triage
+
+from gig_radar.adapters.base import SourceAdapter
 from gig_radar.brain.draft import draft_lead as _real_draft
+from gig_radar.brain.triage import triage as _real_triage
+from gig_radar.llm import SupportsComplete
+from gig_radar.models import Lead
+from gig_radar.normalize import raw_to_lead
+from gig_radar.push.telegram import TelegramTarget
 from gig_radar.push.telegram import push_digest as _real_push
+from gig_radar.store import LeadStore
 
 log = logging.getLogger("gig_radar")
 
 
-def ingest(adapters, store: LeadStore):
+def ingest(adapters: list[SourceAdapter],
+           store: LeadStore) -> tuple[list[Lead], dict[str, str]]:
     """Steps 1-2: fetch and normalize/dedup. Nothing is persisted here -- persistence
     happens in run_pipeline once a lead is processed successfully, so a failed lead is
     never mistakenly marked as seen. Returns (fresh_leads, errors).
@@ -29,9 +35,11 @@ def ingest(adapters, store: LeadStore):
     return store.filter_unseen(all_leads), errors
 
 
-def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
-                 top_n, min_score, telegram, dry_run=False, enrich=True, persona=None,
-                 _triage=_real_triage, _draft=_real_draft, _push=_real_push):
+def run_pipeline(adapters: list[SourceAdapter], store: LeadStore, positioning: str,
+                 llm: SupportsComplete, triage_model: str, draft_model: str,
+                 top_n: int, min_score: int, telegram: TelegramTarget,
+                 dry_run: bool = False, enrich: bool = True, persona: dict | None = None,
+                 _triage=_real_triage, _draft=_real_draft, _push=_real_push) -> dict:
     """Full pipeline: 1) fetch 2) dedup 3) score -> top N above threshold -> 4) draft
     -> 5) push -> 6) write back.
 

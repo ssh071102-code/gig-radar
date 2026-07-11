@@ -3,6 +3,8 @@ import re
 import httpx
 
 from gig_radar.brain.persona import resolve_persona
+from gig_radar.llm import SupportsComplete
+from gig_radar.models import Lead
 
 log = logging.getLogger("gig_radar")
 
@@ -36,7 +38,8 @@ OPENING: <one-line hook in English>
 <the full pitch text in English -- this is what gets sent to the client>"""
 
 
-def draft_lead(lead, positioning, llm, model, enrich=True, persona=None):
+def draft_lead(lead: Lead, positioning: str, llm: SupportsComplete, model: str,
+               enrich: bool = True, persona: dict | None = None) -> Lead:
     """Step 4: draft a single lead. Both enrichment and drafting failures degrade
     gracefully instead of being dropped silently."""
     system = DRAFT_SYSTEM_TEMPLATE.format(**resolve_persona(persona))

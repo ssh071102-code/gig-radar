@@ -1,4 +1,14 @@
+from typing import Protocol
+
 import anthropic
+
+
+class SupportsComplete(Protocol):
+    """What the pipeline needs from an LLM client: one blocking completion call.
+    The test suite and the demo command substitute deterministic fakes."""
+
+    def complete(self, model: str, system: str, user: str, max_tokens: int = ...) -> str:
+        ...
 
 
 class LLM:
@@ -15,7 +25,7 @@ class LLM:
         # Concatenate all text blocks (skip thinking blocks and anything else without .text)
         return "".join(b.text for b in msg.content if hasattr(b, "text"))
 
-    def complete(self, model: str, system: str, user: str, max_tokens=1500) -> str:
+    def complete(self, model: str, system: str, user: str, max_tokens: int = 1500) -> str:
         # Some OpenAI/Anthropic-compatible gateways inject their own system prompt, so
         # instructions go in the user turn. Some models also reject assistant prefill,
         # so we parse a delimited text format instead of forcing JSON.

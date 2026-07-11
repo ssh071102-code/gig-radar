@@ -7,7 +7,7 @@ log = logging.getLogger("gig_radar")
 
 
 class LeadStore:
-    def __init__(self, db_path):
+    def __init__(self, db_path: str | Path):
         self.path = Path(db_path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.path))
@@ -47,7 +47,7 @@ class LeadStore:
         return self._parse_rows(rows)
 
     @staticmethod
-    def _parse_rows(rows) -> list[Lead]:
+    def _parse_rows(rows: list[sqlite3.Row]) -> list[Lead]:
         out = []
         for r in rows:
             try:
