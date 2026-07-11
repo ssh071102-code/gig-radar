@@ -90,6 +90,13 @@ def _run(dry_run: bool, config_dir: Optional[Path] = None):
 
 
 @app.command()
+def demo():
+    """Run the full pipeline on bundled fixture leads -- no network, no API keys."""
+    from gig_radar.demo import run_demo
+    run_demo(echo=typer.echo)
+
+
+@app.command()
 def run(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
     """Run the full pipeline and push results to Telegram."""
     _run(dry_run=False, config_dir=config_dir)
