@@ -1,6 +1,10 @@
 import logging
+import os
 from pathlib import Path
+from typing import Optional
+
 import typer
+
 from gig_radar.config import load_config, env
 from gig_radar.store import LeadStore
 from gig_radar.llm import LLM
@@ -10,7 +14,19 @@ from gig_radar.adapters.reddit import RedditAdapter
 from gig_radar.adapters.upwork import UpworkBoardAdapter
 
 app = typer.Typer(help="gig-radar -- automated lead-gen + LLM proposal drafting")
-ROOT = Path(__file__).resolve().parent.parent
+
+_CONFIG_DIR_OPT = typer.Option(
+    None, "--config-dir",
+    help="Directory holding settings.yaml / sources.yaml / positioning.md "
+         "(default: <root>/config).")
+
+
+def _root() -> Path:
+    """Working root for config/, secrets/ and data/. Defaults to the current
+    directory; set GIG_RADAR_HOME to pin it. Never resolves relative to the
+    package itself, so a non-editable install never reads or writes site-packages."""
+    home = os.environ.get("GIG_RADAR_HOME")
+    return Path(home).expanduser() if home else Path.cwd()
 
 
 def _build_adapters(sources: dict):
@@ -43,14 +59,16 @@ def _require_env(*keys: str) -> None:
         )
 
 
-def _run(dry_run: bool):
+def _run(dry_run: bool, config_dir: Optional[Path] = None):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    cfg = load_config(ROOT / "config", secrets_env=ROOT / "secrets" / ".env")
+    root = _root()
+    config_dir = Path(config_dir) if config_dir else root / "config"
+    cfg = load_config(config_dir, secrets_env=root / "secrets" / ".env")
     _require_env("ANTHROPIC_API_KEY")
     if not dry_run:
         _require_env("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID")
-    positioning = (ROOT / "config" / "positioning.md").read_text("utf-8")
-    store = LeadStore(ROOT / "data" / "leads.sqlite")
+    positioning = (config_dir / "positioning.md").read_text("utf-8")
+    store = LeadStore(root / "data" / "leads.sqlite")
     llm = LLM(api_key=env("ANTHROPIC_API_KEY"), base_url=env("ANTHROPIC_BASE_URL"))
     s = cfg.settings
     result = run_pipeline(
@@ -63,24 +81,26 @@ def _run(dry_run: bool):
 
 
 @app.command()
-def run():
+def run(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
     """Run the full pipeline and push results to Telegram."""
-    _run(dry_run=False)
+    _run(dry_run=False, config_dir=config_dir)
 
 
 @app.command(name="dry-run")
-def dry_run():
+def dry_run(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
     """Run the full pipeline without pushing (local dry run)."""
-    _run(dry_run=True)
+    _run(dry_run=True, config_dir=config_dir)
 
 
 @app.command(name="init-positioning")
-def init_positioning():
+def init_positioning(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
     """Generate a positioning.md template (review and edit before use)."""
-    path = ROOT / "config" / "positioning.md"
+    config_dir = Path(config_dir) if config_dir else _root() / "config"
+    path = config_dir / "positioning.md"
     if path.exists():
         typer.echo(f"Already exists: {path}")
         raise typer.Exit()
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_POSITIONING_TEMPLATE, encoding="utf-8")
     typer.echo(f"Template generated: {path} -- review and edit before use")
 
