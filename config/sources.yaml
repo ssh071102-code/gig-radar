@@ -20,10 +20,7 @@ rss:
     - "https://www.reddit.com/r/forhire/search.rss?q=title%3AHiring&restrict_sr=on&sort=new"
     - https://www.reddit.com/r/jobbit/new/.rss
     - https://www.reddit.com/r/hiring/new/.rss
-  # hn_algolia: not yet implemented (v1.1) -- don't rely on it
 upwork:
   enabled: true         # manual review board only, best-effort
   saved_searches:
     - "https://www.upwork.com/nx/search/jobs/?q=AI%20automation&sort=recency"
-x:
-  enabled: false        # reserved for v1.1
