@@ -1,20 +1,19 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional
 
 import typer
 
 from gig_radar.adapters.base import SourceAdapter
-from gig_radar.config import load_config, env
-from gig_radar.store import LeadStore
+from gig_radar.adapters.reddit import RedditAdapter
+from gig_radar.adapters.rss import RssAdapter
+from gig_radar.adapters.upwork import UpworkBoardAdapter
+from gig_radar.config import env, load_config
 from gig_radar.llm import LLM
 from gig_radar.pipeline import run_pipeline
 from gig_radar.push.telegram import TelegramTarget
+from gig_radar.store import LeadStore
 from gig_radar.templates import POSITIONING_TEMPLATE
-from gig_radar.adapters.rss import RssAdapter
-from gig_radar.adapters.reddit import RedditAdapter
-from gig_radar.adapters.upwork import UpworkBoardAdapter
 
 app = typer.Typer(help="gig-radar -- automated lead-gen + LLM proposal drafting")
 
@@ -62,7 +61,7 @@ def _require_env(*keys: str) -> None:
         )
 
 
-def _run(dry_run: bool, config_dir: Optional[Path] = None) -> None:
+def _run(dry_run: bool, config_dir: Path | None = None) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     root = _root()
     config_dir = Path(config_dir) if config_dir else root / "config"
@@ -98,19 +97,19 @@ def demo():
 
 
 @app.command()
-def run(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
+def run(config_dir: Path | None = _CONFIG_DIR_OPT):
     """Run the full pipeline and push results to Telegram."""
     _run(dry_run=False, config_dir=config_dir)
 
 
 @app.command(name="dry-run")
-def dry_run(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
+def dry_run(config_dir: Path | None = _CONFIG_DIR_OPT):
     """Run the full pipeline without pushing (local dry run)."""
     _run(dry_run=True, config_dir=config_dir)
 
 
 @app.command(name="init-positioning")
-def init_positioning(config_dir: Optional[Path] = _CONFIG_DIR_OPT):
+def init_positioning(config_dir: Path | None = _CONFIG_DIR_OPT):
     """Generate a positioning.md template (review and edit before use)."""
     config_dir = Path(config_dir) if config_dir else _root() / "config"
     path = config_dir / "positioning.md"

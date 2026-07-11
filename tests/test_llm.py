@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+
 from gig_radar.llm import LLM
 
 

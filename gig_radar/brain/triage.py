@@ -59,5 +59,5 @@ def triage(leads: list[Lead], positioning: str, llm: SupportsComplete, model: st
             log.warning("triage failed for %s: %r", lead.id, e)
             lead.status = "unscored"
         scored.append(lead)
-    scored.sort(key=lambda l: (l.score if l.score is not None else -1), reverse=True)
+    scored.sort(key=lambda lead: (lead.score if lead.score is not None else -1), reverse=True)
     return scored

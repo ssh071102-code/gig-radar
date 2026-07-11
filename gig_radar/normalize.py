@@ -1,5 +1,6 @@
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from gig_radar.models import Lead, RawItem
 
 
@@ -16,6 +17,6 @@ def raw_to_lead(raw: RawItem) -> Lead:
         title=raw.title,
         raw_text=raw.raw_text,
         posted_at=raw.posted_at,
-        fetched_at=datetime.now(timezone.utc),
+        fetched_at=datetime.now(UTC),
         client_handle=raw.client_handle,
     )

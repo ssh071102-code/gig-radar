@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 Source = Literal["reddit", "rss", "upwork"]
@@ -14,8 +15,8 @@ class RawItem(BaseModel):
     url: str
     title: str
     raw_text: str
-    posted_at: Optional[datetime] = None
-    client_handle: Optional[str] = None
+    posted_at: datetime | None = None
+    client_handle: str | None = None
 
 
 class Lead(BaseModel):
@@ -26,16 +27,16 @@ class Lead(BaseModel):
     url: str
     title: str
     raw_text: str
-    posted_at: Optional[datetime] = None
-    fetched_at: Optional[datetime] = None
-    client_handle: Optional[str] = None
-    budget_hint: Optional[str] = None
-    lang: Optional[str] = None
-    category: Optional[Category] = None
-    score: Optional[int] = None
-    score_reason: Optional[str] = None
-    channel_action: Optional[ChannelAction] = None
-    draft: Optional[str] = None
-    opening: Optional[str] = None
+    posted_at: datetime | None = None
+    fetched_at: datetime | None = None
+    client_handle: str | None = None
+    budget_hint: str | None = None
+    lang: str | None = None
+    category: Category | None = None
+    score: int | None = None
+    score_reason: str | None = None
+    channel_action: ChannelAction | None = None
+    draft: str | None = None
+    opening: str | None = None
     status: Status = "new"
     owner: str = "default"      # v2 team-routing placeholder

@@ -5,7 +5,7 @@ import httpx
 import respx
 
 from gig_radar.models import Lead
-from gig_radar.push.telegram import push_digest, format_lead
+from gig_radar.push.telegram import format_lead, push_digest
 
 
 def _lead(i="reddit:1", draft="Hi I built X"):

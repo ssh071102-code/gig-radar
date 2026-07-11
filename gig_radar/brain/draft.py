@@ -1,5 +1,6 @@
 import logging
 import re
+
 import httpx
 
 from gig_radar.brain.persona import resolve_persona

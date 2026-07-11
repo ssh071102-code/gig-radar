@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import praw
+
 from gig_radar.adapters.base import SourceAdapter
 from gig_radar.models import RawItem
 
@@ -34,7 +36,7 @@ class RedditAdapter(SourceAdapter):
                     url=f"https://www.reddit.com{s.permalink}",
                     title=s.title,
                     raw_text=s.selftext or "",
-                    posted_at=datetime.fromtimestamp(s.created_utc, tz=timezone.utc),
+                    posted_at=datetime.fromtimestamp(s.created_utc, tz=UTC),
                     client_handle=author,
                 ))
         return items

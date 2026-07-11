@@ -1,12 +1,14 @@
-import respx
 import httpx
-from gig_radar.brain.draft import enrich_context, draft_lead
+import respx
+
+from gig_radar.brain.draft import draft_lead, enrich_context
 from gig_radar.models import Lead
 
 
 @respx.mock
 def test_enrich_fetches_url_bounded():
-    respx.get("https://co/about").mock(return_value=httpx.Response(200, text="<p>We build fintech</p>"))
+    respx.get("https://co/about").mock(
+        return_value=httpx.Response(200, text="<p>We build fintech</p>"))
     txt = enrich_context("https://co/about", max_chars=100)
     assert "fintech" in txt
     assert len(txt) <= 100

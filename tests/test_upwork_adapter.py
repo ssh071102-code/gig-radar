@@ -1,5 +1,8 @@
-import respx, httpx
+import httpx
+import respx
+
 from gig_radar.adapters.upwork import UpworkBoardAdapter
+
 
 @respx.mock
 def test_upwork_parses_titles():

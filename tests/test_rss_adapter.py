@@ -1,7 +1,9 @@
 import logging
 from pathlib import Path
-import respx
+
 import httpx
+import respx
+
 from gig_radar.adapters.rss import RssAdapter
 
 FIX = Path(__file__).parent / "fixtures" / "sample_rss.xml"
@@ -50,7 +52,8 @@ def test_rss_multi_http_feeds_no_delay():
            '<item><title>AI a</title><link>https://x/1</link><description>LLM</description></item>'
            '</channel></rss>')
     respx.get("https://f1/rss").mock(return_value=httpx.Response(200, text=rss))
-    respx.get("https://f2/rss").mock(return_value=httpx.Response(200, text=rss.replace("x/1","x/2")))
+    respx.get("https://f2/rss").mock(
+        return_value=httpx.Response(200, text=rss.replace("x/1", "x/2")))
     items = RssAdapter(feeds=["https://f1/rss", "https://f2/rss"],
                        keywords=["AI"], request_delay=0).fetch()
     assert {i.url for i in items} == {"https://x/1", "https://x/2"}   # both feeds were fetched

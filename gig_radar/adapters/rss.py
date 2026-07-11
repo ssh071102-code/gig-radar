@@ -1,8 +1,10 @@
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import feedparser
 import httpx
+
 from gig_radar.adapters.base import SourceAdapter
 from gig_radar.models import RawItem
 
@@ -43,7 +45,8 @@ class RssAdapter(SourceAdapter):
         items: list[RawItem] = []
         for idx, feed in enumerate(self.feeds):
             if idx > 0 and self.request_delay and feed.startswith(("http://", "https://")):
-                time.sleep(self.request_delay)            # polite delay, avoids 429s from Reddit and others
+                # polite delay, avoids 429s from Reddit and others
+                time.sleep(self.request_delay)
             try:
                 parsed = self._load(feed)
             except Exception as exc:                      # noqa: BLE001 isolate per-feed failures
@@ -55,14 +58,14 @@ class RssAdapter(SourceAdapter):
             for entry in parsed.entries:
                 link = entry.get("link", "") if hasattr(entry, "get") else ""
                 if not link:
-                    continue                              # no link means we can't dedup reliably, skip
+                    continue                          # no link means no reliable dedup, skip
                 title = entry.get("title", "")
                 body = entry.get("description", "") or entry.get("summary", "")
                 if not self._matches(f"{title}\n{body}"):
-                    continue                              # keyword filter (only applied if configured)
+                    continue                          # keyword filter (only if configured)
                 posted = None
                 if getattr(entry, "published_parsed", None):
-                    posted = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                    posted = datetime(*entry.published_parsed[:6], tzinfo=UTC)
                 items.append(RawItem(
                     source="rss",
                     external_id=str(link),

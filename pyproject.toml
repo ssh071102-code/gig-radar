@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-mock>=3.12", "respx>=0.21"]
+dev = ["pytest>=8.0", "pytest-mock>=3.12", "respx>=0.21", "ruff>=0.6"]
 
 [project.scripts]
 gig-radar = "gig_radar.cli:app"
@@ -39,6 +39,12 @@ Issues = "https://github.com/ssh071102-code/gig-radar/issues"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "I"]
 
 [build-system]
 requires = ["hatchling"]

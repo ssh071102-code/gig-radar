@@ -1,6 +1,7 @@
 import logging
 import sqlite3
 from pathlib import Path
+
 from gig_radar.models import Lead, Status
 
 log = logging.getLogger("gig_radar")
@@ -59,11 +60,11 @@ class LeadStore:
     def filter_unseen(self, leads: list[Lead]) -> list[Lead]:
         seen: set[str] = set()
         out = []
-        for l in leads:
-            if l.id in seen or self.exists(l.id):
+        for lead in leads:
+            if lead.id in seen or self.exists(lead.id):
                 continue
-            seen.add(l.id)
-            out.append(l)
+            seen.add(lead.id)
+            out.append(lead)
         return out
 
     def mark(self, lead_id: str, status: Status) -> None:

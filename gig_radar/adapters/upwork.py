@@ -1,6 +1,8 @@
 import logging
 import re
+
 import httpx
+
 from gig_radar.adapters.base import SourceAdapter
 from gig_radar.models import RawItem
 

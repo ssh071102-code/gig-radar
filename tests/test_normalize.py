@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from gig_radar.models import Lead, RawItem
+from gig_radar.normalize import lead_id, raw_to_lead
 
 
 def test_lead_defaults():
@@ -14,9 +15,6 @@ def test_lead_defaults():
 def test_rawitem_minimal():
     raw = RawItem(source="rss", external_id="123", url="http://x", title="t", raw_text="b")
     assert raw.source == "rss"
-
-
-from gig_radar.normalize import lead_id, raw_to_lead
 
 
 def test_lead_id_stable():

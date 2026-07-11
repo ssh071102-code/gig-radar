@@ -46,6 +46,7 @@ def test_committed_example_matches_template():
     """config/positioning.example.md is a rendered copy of the single template source;
     this guards against the two drifting apart."""
     from pathlib import Path
+
     from gig_radar.templates import POSITIONING_TEMPLATE
     example = Path(__file__).parent.parent / "config" / "positioning.example.md"
     assert example.read_text("utf-8") == POSITIONING_TEMPLATE

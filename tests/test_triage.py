@@ -1,5 +1,5 @@
-from gig_radar.models import Lead
 from gig_radar.brain.triage import triage
+from gig_radar.models import Lead
 
 
 def _lead(i):
@@ -26,7 +26,7 @@ def test_triage_scores_and_sorts():
         "job b": "SCORE: 85\nCATEGORY: ai-integration\nCHANNEL: comment\nREASON: great fit",
     })
     out = triage(leads, positioning="POS", llm=llm, model="m")
-    assert [l.id for l in out] == ["b", "a"]
+    assert [lead.id for lead in out] == ["b", "a"]
     assert out[0].score == 85 and out[0].status == "scored"
 
 
@@ -65,7 +65,8 @@ class SpyLLM:
 
 def test_triage_interpolates_persona_into_prompt():
     llm = SpyLLM()
-    persona = {"name": "Alex", "wheelhouse": "data engineering", "experience": "a senior contractor"}
+    persona = {"name": "Alex", "wheelhouse": "data engineering",
+               "experience": "a senior contractor"}
     triage([_lead("a")], positioning="POS", llm=llm, model="m", persona=persona)
     assert "Alex" in llm.system and "data engineering" in llm.system
 

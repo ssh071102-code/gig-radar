@@ -27,7 +27,7 @@ def test_new_leads_filters_seen(tmp_path):
     s.upsert(_lead("reddit:1"))
     incoming = [_lead("reddit:1"), _lead("reddit:2")]
     fresh = s.filter_unseen(incoming)
-    assert [l.id for l in fresh] == ["reddit:2"]
+    assert [lead.id for lead in fresh] == ["reddit:2"]
 
 def test_mark_status(tmp_path):
     s = LeadStore(tmp_path / "db.sqlite")
@@ -39,7 +39,8 @@ def test_filter_unseen_dedups_within_batch(tmp_path):
     s = LeadStore(tmp_path / "db.sqlite")
     incoming = [_lead("reddit:9"), _lead("reddit:9"), _lead("reddit:8")]
     fresh = s.filter_unseen(incoming)
-    assert [l.id for l in fresh] == ["reddit:9", "reddit:8"]   # duplicates within a batch collapse to one
+    # duplicates within a batch collapse to one
+    assert [lead.id for lead in fresh] == ["reddit:9", "reddit:8"]
 
 def test_all_skips_corrupt_row(tmp_path):
     s = LeadStore(tmp_path / "db.sqlite")
@@ -47,7 +48,7 @@ def test_all_skips_corrupt_row(tmp_path):
     s.conn.execute("INSERT INTO leads(id,status,data) VALUES('bad','new','{not json}')")
     s.conn.commit()
     leads = s.all()                                            # should not raise
-    assert [l.id for l in leads] == ["reddit:1"]               # the corrupt row is skipped
+    assert [lead.id for lead in leads] == ["reddit:1"]         # the corrupt row is skipped
 
 def test_context_manager_closes_connection(tmp_path):
     with LeadStore(tmp_path / "db.sqlite") as s:
