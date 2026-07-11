@@ -32,9 +32,23 @@ def _build_adapters(sources: dict):
     return adapters
 
 
+def _require_env(*keys: str) -> None:
+    """Fail fast with a clear message instead of an SDK stack trace mid-run
+    (or, worse, a request to a literal 'None' Telegram URL)."""
+    missing = [k for k in keys if not env(k)]
+    if missing:
+        raise typer.BadParameter(
+            f"missing environment variable(s): {', '.join(missing)}. "
+            "Set them in secrets/.env (see secrets/.env.example) or export them."
+        )
+
+
 def _run(dry_run: bool):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     cfg = load_config(ROOT / "config", secrets_env=ROOT / "secrets" / ".env")
+    _require_env("ANTHROPIC_API_KEY")
+    if not dry_run:
+        _require_env("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID")
     positioning = (ROOT / "config" / "positioning.md").read_text("utf-8")
     store = LeadStore(ROOT / "data" / "leads.sqlite")
     llm = LLM(api_key=env("ANTHROPIC_API_KEY"), base_url=env("ANTHROPIC_BASE_URL"))
