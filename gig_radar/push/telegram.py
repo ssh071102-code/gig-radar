@@ -1,7 +1,17 @@
 import logging
+from typing import NamedTuple
+
 import httpx
 
 log = logging.getLogger("gig_radar")
+
+
+class TelegramTarget(NamedTuple):
+    """Delivery target for the digest. A NamedTuple, so a plain
+    (token, chat_id) tuple works anywhere a TelegramTarget does."""
+
+    token: str
+    chat_id: str
 
 
 def format_lead(lead) -> str:

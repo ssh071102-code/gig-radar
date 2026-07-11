@@ -9,6 +9,7 @@ from gig_radar.config import load_config, env
 from gig_radar.store import LeadStore
 from gig_radar.llm import LLM
 from gig_radar.pipeline import run_pipeline
+from gig_radar.push.telegram import TelegramTarget
 from gig_radar.adapters.rss import RssAdapter
 from gig_radar.adapters.reddit import RedditAdapter
 from gig_radar.adapters.upwork import UpworkBoardAdapter
@@ -75,7 +76,7 @@ def _run(dry_run: bool, config_dir: Optional[Path] = None):
         adapters=_build_adapters(cfg.sources), store=store, positioning=positioning, llm=llm,
         triage_model=s["triage_model"], draft_model=s["draft_model"],
         top_n=s["top_n"], min_score=s["min_score_to_push"],
-        telegram=(env("TELEGRAM_BOT_TOKEN"), env("TELEGRAM_CHAT_ID")),
+        telegram=TelegramTarget(env("TELEGRAM_BOT_TOKEN"), env("TELEGRAM_CHAT_ID")),
         dry_run=dry_run, enrich=s.get("enrich", True), persona=s.get("persona"))
     typer.echo(result)
 

@@ -34,9 +34,15 @@ def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
                  _triage=_real_triage, _draft=_real_draft, _push=_real_push):
     """Full pipeline: 1) fetch 2) dedup 3) score -> top N above threshold -> 4) draft
     -> 5) push -> 6) write back.
+
     Failures are never dropped silently: unscored leads are not persisted (retried next
     run); leads whose push fails are not marked pushed.
-    dry-run has no persistence side effects (a clean preview)."""
+    dry-run has no persistence side effects (a clean preview).
+
+    `telegram` is a TelegramTarget (or any (token, chat_id) tuple). The `_triage`,
+    `_draft` and `_push` keywords are the pipeline's step dependencies: they default to
+    the real implementations and exist so tests and the demo command can substitute
+    deterministic steps without patching."""
     fresh, errors = ingest(adapters, store)
     scored = _triage(fresh, positioning, llm, triage_model, persona=persona)
     n_unscored = sum(1 for lead in scored if lead.status == "unscored")
