@@ -58,7 +58,7 @@ def _run(dry_run: bool):
         triage_model=s["triage_model"], draft_model=s["draft_model"],
         top_n=s["top_n"], min_score=s["min_score_to_push"],
         telegram=(env("TELEGRAM_BOT_TOKEN"), env("TELEGRAM_CHAT_ID")),
-        dry_run=dry_run, enrich=s.get("enrich", True))
+        dry_run=dry_run, enrich=s.get("enrich", True), persona=s.get("persona"))
     typer.echo(result)
 
 

@@ -52,3 +52,25 @@ def test_triage_clamps_score():
     llm = FakeLLM({"job a": "SCORE: 150\nCATEGORY: automation\nCHANNEL: comment\nREASON: x"})
     out = triage(leads, positioning="POS", llm=llm, model="m")
     assert out[0].score == 100
+
+
+class SpyLLM:
+    def __init__(self):
+        self.system = None
+
+    def complete(self, model, system, user, max_tokens=300):
+        self.system = system
+        return "SCORE: 50\nCATEGORY: automation\nCHANNEL: comment\nREASON: ok"
+
+
+def test_triage_interpolates_persona_into_prompt():
+    llm = SpyLLM()
+    persona = {"name": "Alex", "wheelhouse": "data engineering", "experience": "a senior contractor"}
+    triage([_lead("a")], positioning="POS", llm=llm, model="m", persona=persona)
+    assert "Alex" in llm.system and "data engineering" in llm.system
+
+
+def test_triage_defaults_persona_when_missing():
+    llm = SpyLLM()
+    triage([_lead("a")], positioning="POS", llm=llm, model="m")
+    assert "the freelancer" in llm.system            # safe defaults, no hardcoded person

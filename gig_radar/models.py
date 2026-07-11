@@ -38,5 +38,5 @@ class Lead(BaseModel):
     draft: Optional[str] = None
     opening: Optional[str] = None
     status: Status = "new"
-    owner: str = "laurin"       # v2 team-routing placeholder
+    owner: str = "default"      # v2 team-routing placeholder
     tenant: str = "self"        # v2 multi-tenant placeholder

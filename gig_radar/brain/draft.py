@@ -2,6 +2,8 @@ import logging
 import re
 import httpx
 
+from gig_radar.brain.persona import resolve_persona
+
 log = logging.getLogger("gig_radar")
 
 
@@ -20,9 +22,9 @@ def enrich_context(url: str, max_chars: int = 1500, timeout: int = 10) -> str:
         return ""
 
 
-DRAFT_SYSTEM = """You write a tailored freelance pitch for Laurin (AI integration / AI video /
-automation specialist, a cold newcomer building reputation). Pick ONE relevant case from his
-positioning if present. Match the channel format exactly:
+DRAFT_SYSTEM_TEMPLATE = """You write a tailored freelance pitch for {name} ({wheelhouse}
+specialist, {experience}). Pick ONE relevant case from the positioning if present.
+Match the channel format exactly:
 - comment: a helpful public Reddit reply (no salesy DM tone)
 - email: a cold email (subject line + body)
 - upwork_manual: a concise Upwork cover letter
@@ -34,9 +36,10 @@ OPENING: <one-line hook in English>
 <the full pitch text in English -- this is what gets sent to the client>"""
 
 
-def draft_lead(lead, positioning, llm, model, enrich=True):
+def draft_lead(lead, positioning, llm, model, enrich=True, persona=None):
     """Step 4: draft a single lead. Both enrichment and drafting failures degrade
     gracefully instead of being dropped silently."""
+    system = DRAFT_SYSTEM_TEMPLATE.format(**resolve_persona(persona))
     ctx = enrich_context(lead.url) if (enrich and lead.url) else ""
     user = (
         f"POSITIONING:\n{positioning}\n\n"
@@ -45,7 +48,7 @@ def draft_lead(lead, positioning, llm, model, enrich=True):
         f"EXTRA CONTEXT (may be empty):\n{ctx}"
     )
     try:
-        out = llm.complete(model, DRAFT_SYSTEM, user, max_tokens=2000)
+        out = llm.complete(model, system, user, max_tokens=2000)
         om = re.search(r"^OPENING:\s*(.*)$", out, re.MULTILINE | re.IGNORECASE)
         dm = re.search(r"===DRAFT===\s*(.*)", out, re.DOTALL)
         lead.opening = om.group(1).strip() if om else ""

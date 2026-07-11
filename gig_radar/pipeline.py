@@ -30,7 +30,7 @@ def ingest(adapters, store: LeadStore):
 
 
 def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
-                 top_n, min_score, telegram, dry_run=False, enrich=True,
+                 top_n, min_score, telegram, dry_run=False, enrich=True, persona=None,
                  _triage=_real_triage, _draft=_real_draft, _push=_real_push):
     """Full pipeline: 1) fetch 2) dedup 3) score -> top N above threshold -> 4) draft
     -> 5) push -> 6) write back.
@@ -38,7 +38,7 @@ def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
     run); leads whose push fails are not marked pushed.
     dry-run has no persistence side effects (a clean preview)."""
     fresh, errors = ingest(adapters, store)
-    scored = _triage(fresh, positioning, llm, triage_model)
+    scored = _triage(fresh, positioning, llm, triage_model, persona=persona)
     n_unscored = sum(1 for lead in scored if lead.status == "unscored")
     log.info("ingested %d fresh; scored %d; unscored %d (retry next run); source errors=%s",
              len(fresh), len(scored) - n_unscored, n_unscored, errors)
@@ -56,7 +56,7 @@ def run_pipeline(adapters, store, positioning, llm, triage_model, draft_model,
         key=lambda lead: lead.score, reverse=True)
     top = eligible[:top_n]
     for lead in top:
-        _draft(lead, positioning, llm, draft_model, enrich)
+        _draft(lead, positioning, llm, draft_model, enrich, persona=persona)
 
     token, chat_id = telegram
     pushed = []

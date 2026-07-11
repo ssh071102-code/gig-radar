@@ -44,10 +44,10 @@ def test_ingest_dedups_across_runs(tmp_path):
 
 def test_run_pipeline_dry_run_pushes_nothing(tmp_path):
     calls = {"push": 0}
-    def fake_triage(leads, positioning, llm, model):
+    def fake_triage(leads, positioning, llm, model, persona=None):
         for l in leads: l.score = 90; l.status = "scored"; l.channel_action = "comment"
         return leads
-    def fake_draft(lead, positioning, llm, model, enrich): lead.draft = "d"; return lead
+    def fake_draft(lead, positioning, llm, model, enrich, persona=None): lead.draft = "d"; return lead
     def fake_push(leads, token, chat_id): calls["push"] += len(leads); return list(leads)
 
     store = LeadStore(tmp_path / "db.sqlite")
@@ -63,10 +63,10 @@ def test_run_pipeline_dry_run_pushes_nothing(tmp_path):
 
 
 def test_run_pipeline_real_push_marks_pushed(tmp_path):
-    def fake_triage(leads, positioning, llm, model):
+    def fake_triage(leads, positioning, llm, model, persona=None):
         for l in leads: l.score = 90; l.status = "scored"; l.channel_action = "comment"
         return leads
-    def fake_draft(lead, positioning, llm, model, enrich): lead.draft = "d"; return lead
+    def fake_draft(lead, positioning, llm, model, enrich, persona=None): lead.draft = "d"; return lead
     pushed = []
     def fake_push(leads, token, chat_id): pushed.extend(leads); return list(leads)
 
@@ -80,10 +80,10 @@ def test_run_pipeline_real_push_marks_pushed(tmp_path):
 
 
 def test_run_pipeline_unscored_not_persisted(tmp_path):
-    def fake_triage(leads, positioning, llm, model):
+    def fake_triage(leads, positioning, llm, model, persona=None):
         for l in leads: l.status = "unscored"          # scoring failed
         return leads
-    def fake_draft(lead, positioning, llm, model, enrich): return lead
+    def fake_draft(lead, positioning, llm, model, enrich, persona=None): return lead
     def fake_push(leads, token, chat_id): return list(leads)
     store = LeadStore(tmp_path / "db.sqlite")
     run_pipeline(adapters=[OkAdapter()], store=store, positioning="POS", llm=None,
@@ -95,10 +95,10 @@ def test_run_pipeline_unscored_not_persisted(tmp_path):
     assert len(fresh2) == 1                             # retried next run, never dropped silently
 
 def test_run_pipeline_push_failure_not_marked(tmp_path):
-    def fake_triage(leads, positioning, llm, model):
+    def fake_triage(leads, positioning, llm, model, persona=None):
         for l in leads: l.score = 90; l.status = "scored"; l.channel_action = "comment"
         return leads
-    def fake_draft(lead, positioning, llm, model, enrich): lead.draft = "d"; return lead
+    def fake_draft(lead, positioning, llm, model, enrich, persona=None): lead.draft = "d"; return lead
     def fake_push(leads, token, chat_id): return []    # push fails entirely
     store = LeadStore(tmp_path / "db.sqlite")
     run_pipeline(adapters=[OkAdapter()], store=store, positioning="POS", llm=None,
@@ -120,14 +120,14 @@ def test_run_pipeline_backlog_pushed_on_later_run(tmp_path):
                             title=title, raw_text="b")
                     for i, title in enumerate(scores)]
 
-    def fake_triage(leads, positioning, llm, model):
+    def fake_triage(leads, positioning, llm, model, persona=None):
         for lead in leads:
             lead.score = scores[lead.title]
             lead.status = "scored"
             lead.channel_action = "comment"
         return leads
 
-    def fake_draft(lead, positioning, llm, model, enrich):
+    def fake_draft(lead, positioning, llm, model, enrich, persona=None):
         lead.draft = "d"
         return lead
 
@@ -148,10 +148,10 @@ def test_run_pipeline_backlog_pushed_on_later_run(tmp_path):
 
 
 def test_run_pipeline_below_min_not_pushed(tmp_path):
-    def fake_triage(leads, positioning, llm, model):
+    def fake_triage(leads, positioning, llm, model, persona=None):
         for l in leads: l.score = 10; l.status = "scored"; l.channel_action = "comment"
         return leads
-    def fake_draft(lead, positioning, llm, model, enrich): lead.draft = "d"; return lead
+    def fake_draft(lead, positioning, llm, model, enrich, persona=None): lead.draft = "d"; return lead
     pushed = []
     def fake_push(leads, token, chat_id): pushed.extend(leads); return list(leads)
     store = LeadStore(tmp_path / "db.sqlite")

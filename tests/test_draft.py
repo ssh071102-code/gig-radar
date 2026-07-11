@@ -54,3 +54,18 @@ def test_draft_passes_channel_action_to_prompt():
     llm = FakeLLM("OPENING: o\n===DRAFT===\nd")
     draft_lead(_lead("email"), positioning="POS", llm=llm, model="m", enrich=False)
     assert "email" in llm.seen
+
+
+def test_draft_interpolates_persona_into_prompt():
+    class SpyLLM:
+        def __init__(self):
+            self.system = None
+
+        def complete(self, model, system, user, max_tokens=2000):
+            self.system = system
+            return "OPENING: o\n===DRAFT===\nd"
+
+    llm = SpyLLM()
+    draft_lead(_lead("comment"), positioning="POS", llm=llm, model="m", enrich=False,
+               persona={"name": "Alex"})
+    assert "Alex" in llm.system

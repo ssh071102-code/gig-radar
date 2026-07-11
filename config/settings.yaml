@@ -3,3 +3,9 @@ triage_model: claude-haiku-4-5-20251001
 draft_model: claude-sonnet-4-6   # use a stronger model here since only top-N leads reach this step
 min_score_to_push: 55          # leads scoring below this are not pushed
 enrich: true                   # step 4: whether to fetch a public page for extra context
+
+# Interpolated into the triage and drafting prompts -- describe yourself here.
+persona:
+  name: Laurin
+  wheelhouse: AI integration, AI video, automation
+  experience: a cold newcomer with no platform rating, building reputation
