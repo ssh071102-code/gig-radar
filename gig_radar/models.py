@@ -2,10 +2,10 @@ from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict
 
-Source = Literal["reddit", "rss", "upwork", "x"]
+Source = Literal["reddit", "rss", "upwork"]
 Category = Literal["ai-integration", "ai-video", "automation", "other"]
 ChannelAction = Literal["comment", "email", "dm", "upwork_manual"]
-Status = Literal["new", "scored", "unscored", "pushed", "applied", "skipped", "won"]
+Status = Literal["new", "scored", "unscored", "pushed"]
 
 
 class RawItem(BaseModel):
@@ -39,4 +39,3 @@ class Lead(BaseModel):
     opening: Optional[str] = None
     status: Status = "new"
     owner: str = "default"      # v2 team-routing placeholder
-    tenant: str = "self"        # v2 multi-tenant placeholder

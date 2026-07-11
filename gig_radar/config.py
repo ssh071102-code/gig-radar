@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 class Config:
     settings: dict
     sources: dict
-    root: Path
 
 
 def load_config(config_dir, secrets_env: Path | None = None) -> Config:
@@ -19,7 +18,7 @@ def load_config(config_dir, secrets_env: Path | None = None) -> Config:
         load_dotenv(secrets_env)
     settings = yaml.safe_load((config_dir / "settings.yaml").read_text("utf-8")) or {}
     sources = yaml.safe_load((config_dir / "sources.yaml").read_text("utf-8")) or {}
-    return Config(settings=settings, sources=sources, root=config_dir.parent)
+    return Config(settings=settings, sources=sources)
 
 
 def env(key: str, default: str | None = None) -> str | None:
