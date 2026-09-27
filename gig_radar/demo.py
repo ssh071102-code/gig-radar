@@ -148,7 +148,7 @@ def run_demo(echo=print) -> dict:
     echo(f"Drafted reply for the top posting ({top.score}, {top.channel_action}):")
     echo(f"  {top.opening}")
     for line in (top.draft or "").splitlines():
-        echo(f"  {line}")
+        echo(f"  {line}" if line else "")
     echo("")
     echo("Exact Telegram message that WOULD be sent for it:")
     echo("-" * 60)
