@@ -11,19 +11,19 @@ from gig_radar.pipeline import run_pipeline
 from gig_radar.push.telegram import TelegramTarget, format_lead
 from gig_radar.store import LeadStore
 
+# The demo profile is deliberately left as a template. Canned drafts below quote these
+# placeholders instead of inventing a track record; a real run fills them from the
+# user's own config/positioning.md.
 DEMO_POSITIONING = """# Positioning & Case Studies (demo fixture)
 
 ## One-line positioning
-I help small SaaS teams ship AI features -- RAG chatbots, LLM automations, AI video.
+<what you build, and for whom>
 
 ## Case cards
-### Case 1: Support chatbot over product docs
-- What was built: RAG pipeline + chat widget grounded in the company's docs
-- Result: first-response time cut from hours to seconds
-- Transferable to: any docs-heavy product
-
-## Rate anchor
-- Fixed-price per scoped deliverable
+### Case 1: <your case title>
+- What was built: <what you built>
+- Result: <the result, in your own numbers>
+- Transferable to: <where it applies>
 
 ## Tone
 - Direct, specific, no fluff
@@ -46,10 +46,10 @@ FIXTURE_ITEMS = [
             raw_text="60-90s product demo video for a launch page. Open to AI video "
                      "tooling if the result looks professional."),
     RawItem(source="rss", external_id="demo-4",
-            url="https://example.com/jobs/toptal-ml",
-            title="[Hiring] Senior ML engineer, Toptal-vetted only",
-            raw_text="Looking for a Toptal-vetted senior ML engineer with an "
-                     "established platform rating and enterprise references."),
+            url="https://example.com/jobs/staff-ml",
+            title="[Hiring] Staff ML engineer, 8+ years, full-time",
+            raw_text="Full-time role. 8+ years of production ML, prior staff-level "
+                     "scope and enterprise references required."),
     RawItem(source="rss", external_id="demo-5",
             url="https://example.com/jobs/wordpress-theme",
             title="[Hiring] Fix the fonts on my WordPress theme",
@@ -64,8 +64,8 @@ _TRIAGE = {
                              "Well-scoped automation with obvious weekly ROI"),
     "product demo video": (76, "ai-video", "dm",
                            "AI-video fit; client already open to AI tooling"),
-    "Toptal-vetted": (28, "other", "comment",
-                      "Requires an established platform rating a newcomer lacks"),
+    "Staff ML engineer": (28, "other", "email",
+                          "Asks for 8+ years at staff level, well above the persona"),
     "WordPress theme": (12, "other", "comment",
                         "Out of wheelhouse; plain theme CSS work"),
 }
@@ -73,29 +73,29 @@ _TRIAGE = {
 # title-key -> canned draft (only leads that clear the top-N gate get drafted)
 _DRAFTS = {
     "support chatbot": (
-        "OPENING: Grounded-in-your-docs chatbot with citations -- shipped this exact thing.\n"
+        "OPENING: Docs-grounded support chatbot with citations, scoped to your ticket volume.\n"
         "===DRAFT===\n"
-        "I built a RAG support chatbot for a docs-heavy SaaS: retrieval over the docs, "
-        "answers with citations, and a fallback to a human when confidence is low. "
-        "First-response time went from hours to seconds.\n\n"
-        "For your ~2k tickets/month I'd start with a one-week scoped build: index your docs, "
-        "stand up the chat endpoint, and measure deflection on real tickets before you "
-        "commit further. Happy to share the eval setup I use to keep answers honest."),
+        "Relevant work: <Case 1 from your positioning: what you built, and the result>.\n\n"
+        "For ~2k tickets/month I would start with a one-week first milestone: index your "
+        "docs, stand up a chat endpoint that answers with citations and hands off to a "
+        "human when unsure, and measure deflection on a sample of real tickets before "
+        "you commit further."),
     "weekly ops reporting": (
-        "OPENING: That day-per-week of copy-paste is exactly what I automate.\n"
+        "OPENING: Your weekly Airtable-to-Slack copy-paste can run on a schedule.\n"
         "===DRAFT===\n"
-        "Subject: Airtable-to-Slack reporting on autopilot\n\n"
-        "You describe a day per week lost to moving numbers between Airtable, Sheets and "
-        "Slack. I build exactly these bridges: a scheduled job pulls from Airtable, "
-        "computes the weekly rollups, and posts a formatted digest to Slack -- no human "
-        "in the loop, with an audit log so you can trust the numbers."),
+        "Subject: Automating the weekly ops report\n\n"
+        "You describe a day per week spent moving numbers between Airtable, Sheets and "
+        "Slack. Proposed approach: a scheduled job pulls from Airtable, computes the "
+        "weekly rollups and posts a formatted digest to Slack, with a run log so the "
+        "numbers can be checked.\n\n"
+        "Relevant work: <a case from your positioning, if one fits>."),
     "product demo video": (
-        "OPENING: AI-made demo video that does not look AI-made.\n"
+        "OPENING: A 60-90s launch demo built from your real product flow.\n"
         "===DRAFT===\n"
-        "For a 60-90s launch demo I storyboard from your actual product flow, generate "
-        "scenes with current AI video tooling, and cut it to a voiceover script that "
-        "sells the outcome, not the features. You review at storyboard and rough-cut "
-        "stages, so nothing ships that you have not signed off."),
+        "Proposed approach: storyboard from your actual product flow, generate scenes "
+        "with AI video tooling, and cut to a short voiceover script. You review at the "
+        "storyboard and rough-cut stages before anything is final.\n\n"
+        "Relevant work: <a case from your positioning, if one fits>."),
 }
 
 
@@ -140,12 +140,12 @@ def run_demo(echo=print) -> dict:
 
     echo("gig-radar demo -- bundled fixture data, no network, no API keys")
     echo("")
-    echo("Scored leads (demo fixtures):")
+    echo("Scored postings (demo fixtures):")
     for lead in scored:
         echo(f"  {lead.score:>3}  {lead.category or 'other':<15} {lead.title}")
     echo("")
     top = sent[0]
-    echo(f"Drafted proposal for the top lead ({top.score}, {top.channel_action}):")
+    echo(f"Drafted reply for the top posting ({top.score}, {top.channel_action}):")
     echo(f"  {top.opening}")
     for line in (top.draft or "").splitlines():
         echo(f"  {line}")

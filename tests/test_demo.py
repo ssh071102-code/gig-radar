@@ -25,3 +25,12 @@ def test_demo_is_deterministic():
     assert first == second
     assert r1 == r2
     assert r1["pushed"] == 3 and r1["fresh"] == 5
+
+
+def test_demo_drafts_quote_the_profile_instead_of_inventing_one():
+    lines: list[str] = []
+    run_demo(echo=lines.append)
+    out = "\n".join(lines)
+    assert "<Case 1 from your positioning" in out
+    for claim in ("I built", "shipped", "hours to seconds"):
+        assert claim not in out
