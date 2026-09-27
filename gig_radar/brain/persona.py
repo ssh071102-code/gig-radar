@@ -5,9 +5,9 @@ and the drafting prompts, so nothing about a specific person is hardcoded in cod
 """
 
 DEFAULT_PERSONA = {
-    "name": "the freelancer",
-    "wheelhouse": "AI integration, AI video, automation",
-    "experience": "a cold newcomer with no platform rating",
+    "name": "the user",
+    "wheelhouse": "AI integration, automation",
+    "experience": "early-career",
 }
 
 

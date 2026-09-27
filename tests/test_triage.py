@@ -74,4 +74,4 @@ def test_triage_interpolates_persona_into_prompt():
 def test_triage_defaults_persona_when_missing():
     llm = SpyLLM()
     triage([_lead("a")], positioning="POS", llm=llm, model="m")
-    assert "the freelancer" in llm.system            # safe defaults, no hardcoded person
+    assert "the user" in llm.system            # safe defaults, no hardcoded person
