@@ -30,8 +30,6 @@ class Lead(BaseModel):
     posted_at: datetime | None = None
     fetched_at: datetime | None = None
     client_handle: str | None = None
-    budget_hint: str | None = None
-    lang: str | None = None
     category: Category | None = None
     score: int | None = None
     score_reason: str | None = None
@@ -39,4 +37,3 @@ class Lead(BaseModel):
     draft: str | None = None
     opening: str | None = None
     status: Status = "new"
-    owner: str = "default"      # v2 team-routing placeholder

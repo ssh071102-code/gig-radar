@@ -8,7 +8,6 @@ from gig_radar.normalize import lead_id, raw_to_lead
 def test_lead_defaults():
     lead = Lead(id="reddit:abc", source="reddit", url="http://x", title="t", raw_text="body")
     assert lead.status == "new"
-    assert lead.owner == "default"
     assert lead.score is None
 
 
