@@ -1,4 +1,7 @@
+import sys
 from types import SimpleNamespace
+
+import pytest
 
 from gig_radar.adapters.reddit import RedditAdapter
 
@@ -32,3 +35,9 @@ def test_reddit_keyword_filter():
     assert ids == ["a1"]                    # only the keyword hit survives
     assert items[0].url.endswith("/r/forhire/a1")
     assert items[0].source == "reddit"
+
+
+def test_reddit_without_praw_gives_install_hint(monkeypatch):
+    monkeypatch.setitem(sys.modules, "praw", None)     # simulate praw not installed
+    with pytest.raises(RuntimeError, match=r"gig-radar\[reddit\]"):
+        RedditAdapter(subreddits=["forhire"], keywords=["AI"])

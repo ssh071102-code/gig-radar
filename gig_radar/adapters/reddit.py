@@ -1,9 +1,20 @@
 from datetime import UTC, datetime
 
-import praw
-
 from gig_radar.adapters.base import SourceAdapter
 from gig_radar.models import RawItem
+
+
+def _make_client(client_id, client_secret, user_agent):
+    """Build an authenticated praw client. praw is an optional extra, so a missing
+    install fails here with an actionable message rather than at import time."""
+    try:
+        import praw
+    except ImportError as e:
+        raise RuntimeError(
+            "the reddit source needs praw: pip install 'gig-radar[reddit]' "
+            "(or disable `reddit:` in sources.yaml and use the logged-out .rss feeds)"
+        ) from e
+    return praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent)
 
 
 class RedditAdapter(SourceAdapter):
@@ -14,9 +25,7 @@ class RedditAdapter(SourceAdapter):
         self.subreddits = subreddits
         self.keywords = [k.lower() for k in keywords]
         self.limit_per_sub = limit_per_sub
-        self.reddit = reddit or praw.Reddit(
-            client_id=client_id, client_secret=client_secret, user_agent=user_agent,
-        )
+        self.reddit = reddit or _make_client(client_id, client_secret, user_agent)
 
     def _matches(self, text: str) -> bool:
         t = text.lower()
