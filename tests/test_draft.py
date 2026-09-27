@@ -48,8 +48,8 @@ def test_draft_failure_degrades_without_raising():
             raise RuntimeError("api down")
 
     lead = draft_lead(_lead("comment"), positioning="POS", llm=BoomLLM(), model="m", enrich=False)
-    assert lead.draft == ""
-    assert lead.opening == "(draft failed, write manually)"
+    assert lead.draft == ""                  # empty draft is the pipeline's failure signal
+    assert lead.opening == ""
 
 
 def test_draft_passes_channel_action_to_prompt():

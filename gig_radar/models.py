@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 Source = Literal["reddit", "rss", "upwork"]
 Category = Literal["ai-integration", "ai-video", "automation", "other"]
 ChannelAction = Literal["comment", "email", "dm", "upwork_manual"]
-Status = Literal["new", "scored", "unscored", "pushed"]
+Status = Literal["new", "scored", "unscored", "pushed", "failed", "expired"]
 
 
 class RawItem(BaseModel):
@@ -36,4 +36,5 @@ class Lead(BaseModel):
     channel_action: ChannelAction | None = None
     draft: str | None = None
     opening: str | None = None
+    draft_failures: int = 0     # consecutive failed drafting attempts
     status: Status = "new"

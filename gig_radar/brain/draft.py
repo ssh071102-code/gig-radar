@@ -41,8 +41,9 @@ OPENING: <one-line hook in English>
 
 def draft_lead(lead: Lead, positioning: str, llm: SupportsComplete, model: str,
                enrich: bool = True, persona: dict | None = None) -> Lead:
-    """Step 4: draft a single lead. Both enrichment and drafting failures degrade
-    gracefully instead of being dropped silently."""
+    """Step 4: draft a single lead. Enrichment failures degrade to no extra context.
+    A drafting failure leaves `lead.draft` empty and never raises; the pipeline treats
+    an empty draft as failed, holds the lead back from the push and retries it later."""
     system = DRAFT_SYSTEM_TEMPLATE.format(**resolve_persona(persona))
     ctx = enrich_context(lead.url) if (enrich and lead.url) else ""
     user = (
@@ -62,5 +63,5 @@ def draft_lead(lead: Lead, positioning: str, llm: SupportsComplete, model: str,
     except Exception as e:                         # noqa: BLE001
         log.warning("draft failed for %s: %r", lead.id, e)
         lead.draft = ""
-        lead.opening = "(draft failed, write manually)"
+        lead.opening = ""
     return lead

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from gig_radar.config import load_config
 from gig_radar.models import RawItem
 from gig_radar.pipeline import ingest, run_pipeline
@@ -173,3 +175,97 @@ def test_run_pipeline_below_min_not_pushed(tmp_path):
                      telegram=("TOK", "42"), dry_run=False, enrich=False,
                      _triage=_scoring_triage(10), _draft=fake_draft, _push=fake_push)
     assert pushed == [] and r["drafted"] == 0          # below threshold: no draft, no push
+
+
+def _collecting_push(pushed):
+    def fake_push(leads, token, chat_id):
+        pushed.extend(leads)
+        return list(leads)
+    return fake_push
+
+
+def _failing_draft(lead, positioning, llm, model, enrich, persona=None):
+    lead.draft = ""                                     # what draft_lead leaves on failure
+    return lead
+
+
+def test_run_pipeline_failed_draft_not_pushed_and_retried(tmp_path):
+    pushed = []
+    store = LeadStore(tmp_path / "db.sqlite")
+    kwargs = dict(adapters=[OkAdapter()], store=store, positioning="POS", llm=None,
+                  triage_model="t", draft_model="d", top_n=5, min_score=55,
+                  telegram=("TOK", "42"), dry_run=False, enrich=False,
+                  _triage=_scoring_triage(90), _push=_collecting_push(pushed))
+    r = run_pipeline(**kwargs, _draft=_failing_draft)
+    assert pushed == [] and r["drafted"] == 0 and r["draft_failed"] == 1
+    lead = store.all()[0]
+    assert lead.status == "scored" and lead.draft_failures == 1   # kept in the backlog
+
+    r = run_pipeline(**kwargs, _draft=fake_draft)       # next run: drafting works again
+    assert [p.id for p in pushed] == [lead.id] and r["pushed"] == 1
+    assert store.get(lead.id).status == "pushed"
+
+
+def test_run_pipeline_gives_up_after_max_draft_attempts(tmp_path):
+    pushed = []
+    store = LeadStore(tmp_path / "db.sqlite")
+    kwargs = dict(adapters=[OkAdapter()], store=store, positioning="POS", llm=None,
+                  triage_model="t", draft_model="d", top_n=5, min_score=55,
+                  telegram=("TOK", "42"), dry_run=False, enrich=False,
+                  max_draft_attempts=3, _triage=_scoring_triage(90),
+                  _draft=_failing_draft, _push=_collecting_push(pushed))
+    for _ in range(3):
+        run_pipeline(**kwargs)
+    lead = store.all()[0]
+    assert lead.status == "failed" and lead.draft_failures == 3
+    r = run_pipeline(**kwargs)                          # a 4th run no longer retries it
+    assert r["draft_failed"] == 0 and pushed == []
+
+
+def _dated_adapter(days_old):
+    class DatedAdapter:
+        name = "dated"
+
+        def fetch(self):
+            return [RawItem(source="rss", external_id="1", url="http://x", title="AI job",
+                            raw_text="b",
+                            posted_at=datetime.now(UTC) - timedelta(days=days_old))]
+    return DatedAdapter()
+
+
+def test_run_pipeline_skips_leads_older_than_max_age(tmp_path):
+    pushed = []
+    store = LeadStore(tmp_path / "db.sqlite")
+    r = run_pipeline(adapters=[_dated_adapter(30)], store=store, positioning="POS",
+                     llm=None, triage_model="t", draft_model="d", top_n=5, min_score=55,
+                     telegram=("TOK", "42"), dry_run=False, enrich=False, max_age_days=14,
+                     _triage=_scoring_triage(90), _draft=fake_draft,
+                     _push=_collecting_push(pushed))
+    assert pushed == [] and r["expired"] == 1 and r["drafted"] == 0
+    assert store.all()[0].status == "expired"           # persisted, so it is not re-scored
+
+
+def test_run_pipeline_backlog_lead_expires(tmp_path):
+    """A backlog lead that was fine when scored is dropped once it ages past the limit."""
+    pushed = []
+    store = LeadStore(tmp_path / "db.sqlite")
+    kwargs = dict(adapters=[_dated_adapter(10)], store=store, positioning="POS", llm=None,
+                  triage_model="t", draft_model="d", top_n=5, min_score=55,
+                  telegram=("TOK", "42"), dry_run=False, enrich=False,
+                  _triage=_scoring_triage(90), _draft=fake_draft, _push=lambda *a: [])
+    run_pipeline(**kwargs, max_age_days=14)             # push fails: lead waits in backlog
+    assert store.all()[0].status == "scored"
+    r = run_pipeline(**{**kwargs, "_push": _collecting_push(pushed)}, max_age_days=7)
+    assert pushed == [] and r["expired"] == 1
+    assert store.all()[0].status == "expired"
+
+
+def test_run_pipeline_max_age_disabled(tmp_path):
+    pushed = []
+    store = LeadStore(tmp_path / "db.sqlite")
+    run_pipeline(adapters=[_dated_adapter(365)], store=store, positioning="POS", llm=None,
+                 triage_model="t", draft_model="d", top_n=5, min_score=55,
+                 telegram=("TOK", "42"), dry_run=False, enrich=False, max_age_days=None,
+                 _triage=_scoring_triage(90), _draft=fake_draft,
+                 _push=_collecting_push(pushed))
+    assert len(pushed) == 1

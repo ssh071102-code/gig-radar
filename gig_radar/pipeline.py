@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC, datetime, timedelta
 
 from gig_radar.adapters.base import SourceAdapter
 from gig_radar.brain.draft import draft_lead as _real_draft
@@ -35,16 +36,30 @@ def ingest(adapters: list[SourceAdapter],
     return store.filter_unseen(all_leads), errors
 
 
+def _is_stale(lead: Lead, cutoff: datetime | None) -> bool:
+    """True if the lead was posted (or, lacking a post date, first fetched) before cutoff."""
+    ts = lead.posted_at or lead.fetched_at
+    if cutoff is None or ts is None:
+        return False
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=UTC)
+    return ts < cutoff
+
+
 def run_pipeline(adapters: list[SourceAdapter], store: LeadStore, positioning: str,
                  llm: SupportsComplete, triage_model: str, draft_model: str,
                  top_n: int, min_score: int, telegram: TelegramTarget,
                  dry_run: bool = False, enrich: bool = True, persona: dict | None = None,
+                 max_age_days: int | None = 14, max_draft_attempts: int = 3,
                  _triage=_real_triage, _draft=_real_draft, _push=_real_push) -> dict:
     """Full pipeline: 1) fetch 2) dedup 3) score -> top N above threshold -> 4) draft
     -> 5) push -> 6) write back.
 
     Failures are never dropped silently: unscored leads are not persisted (retried next
-    run); leads whose push fails are not marked pushed.
+    run); a lead whose draft fails is not pushed and stays in the backlog, until it has
+    failed `max_draft_attempts` times and is marked "failed"; leads whose push fails are
+    not marked pushed. Leads older than `max_age_days` (by post date, else first fetch)
+    are marked "expired" and never pushed; None or 0 disables the age limit.
     dry-run has no persistence side effects (a clean preview).
 
     `telegram` is a TelegramTarget (or any (token, chat_id) tuple). The `_triage`,
@@ -65,31 +80,49 @@ def run_pipeline(adapters: list[SourceAdapter], store: LeadStore, positioning: s
     for lead in scored:
         if lead.status == "scored":
             pool[lead.id] = lead
+
+    cutoff = datetime.now(UTC) - timedelta(days=max_age_days) if max_age_days else None
+    expired = [lead for lead in pool.values() if _is_stale(lead, cutoff)]
+    for lead in expired:
+        lead.status = "expired"
+
     eligible = sorted(
-        (lead for lead in pool.values() if lead.score is not None and lead.score >= min_score),
+        (lead for lead in pool.values()
+         if lead.status == "scored" and lead.score is not None and lead.score >= min_score),
         key=lambda lead: lead.score, reverse=True)
     top = eligible[:top_n]
+    drafted, draft_failed = [], []
     for lead in top:
         _draft(lead, positioning, llm, draft_model, enrich, persona=persona)
+        if lead.draft:
+            lead.draft_failures = 0
+            drafted.append(lead)
+            continue
+        lead.draft_failures += 1
+        if lead.draft_failures >= max_draft_attempts:
+            lead.status = "failed"
+        draft_failed.append(lead)
+        log.warning("draft failed for %s (attempt %d/%d)%s", lead.id, lead.draft_failures,
+                    max_draft_attempts, "; giving up" if lead.status == "failed" else "")
 
     token, chat_id = telegram
     pushed = []
     if dry_run:
-        for lead in top:
+        for lead in drafted:
             log.info("[dry-run] would push: %s (%s)", lead.title, lead.score)
         # No persistence: dry-run stays a clean preview and never pollutes a later real run.
     else:
-        # Only persist leads that scored successfully (unscored ones are retried next
-        # run, never dropped silently).
-        for lead in scored:
-            if lead.status == "scored":
-                store.upsert(lead)
-        for lead in top:
-            store.upsert(lead)                      # persist drafts (backlog leads included)
-        pushed = _push(top, token, chat_id)         # returns the leads pushed successfully
+        # Persist every lead whose state changed this run. Unscored leads are skipped on
+        # purpose: they are retried next run, never dropped silently.
+        changed = {lead.id: lead for lead in scored if lead.status != "unscored"}
+        changed.update((lead.id, lead) for lead in (*top, *expired))
+        for lead in changed.values():
+            store.upsert(lead)
+        pushed = _push(drafted, token, chat_id)     # returns the leads pushed successfully
         for lead in pushed:
             store.mark(lead.id, "pushed")
 
     return {"fresh": len(fresh), "scored": len(scored) - n_unscored,
-            "unscored": n_unscored, "drafted": len(top),
+            "unscored": n_unscored, "drafted": len(drafted),
+            "draft_failed": len(draft_failed), "expired": len(expired),
             "pushed": len(pushed), "errors": errors}
