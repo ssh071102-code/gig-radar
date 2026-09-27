@@ -1,11 +1,11 @@
 [project]
 name = "gig-radar"
 version = "0.1.0"
-description = "Freelance lead-gen pipeline: multi-source ingestion, LLM triage and scoring, tailored proposal drafts, Telegram delivery."
+description = "LLM scoring pipeline: multi-source ingestion, cheap-model triage, capped drafting with a stronger model, Telegram delivery."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Laurin Lin" }]
-keywords = ["llm", "automation", "lead-generation", "freelance", "telegram", "anthropic"]
+keywords = ["llm", "automation", "pipeline", "rss", "telegram", "anthropic"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
