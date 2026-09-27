@@ -15,7 +15,7 @@ from gig_radar.push.telegram import TelegramTarget
 from gig_radar.store import LeadStore
 from gig_radar.templates import POSITIONING_TEMPLATE
 
-app = typer.Typer(help="gig-radar -- automated lead-gen + LLM proposal drafting")
+app = typer.Typer(help="gig-radar -- multi-source posting ingestion, LLM scoring and drafting")
 
 _CONFIG_DIR_OPT = typer.Option(
     None, "--config-dir",
@@ -85,7 +85,9 @@ def _run(dry_run: bool, config_dir: Path | None = None) -> None:
         triage_model=s["triage_model"], draft_model=s["draft_model"],
         top_n=s["top_n"], min_score=s["min_score_to_push"],
         telegram=TelegramTarget(env("TELEGRAM_BOT_TOKEN"), env("TELEGRAM_CHAT_ID")),
-        dry_run=dry_run, enrich=s.get("enrich", True), persona=s.get("persona"))
+        dry_run=dry_run, enrich=s.get("enrich", True), persona=s.get("persona"),
+        max_age_days=s.get("max_age_days", 14),
+        max_draft_attempts=s.get("max_draft_attempts", 3))
     typer.echo(result)
 
 

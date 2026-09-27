@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import typer
 from typer.testing import CliRunner
@@ -60,3 +62,25 @@ def test_run_without_positioning_points_at_init(monkeypatch, tmp_path):
     result = CliRunner().invoke(cli.app, ["dry-run", "--config-dir", str(tmp_path)])
     assert result.exit_code != 0
     assert "init-positioning" in result.output
+
+
+def test_run_passes_shipped_settings_to_pipeline(monkeypatch, tmp_path):
+    """The committed config/settings.yaml loads and its keys reach run_pipeline."""
+    repo_config = Path(__file__).resolve().parent.parent / "config"
+    for name in ("settings.yaml", "sources.yaml"):
+        (tmp_path / name).write_text((repo_config / name).read_text("utf-8"), encoding="utf-8")
+    (tmp_path / "positioning.md").write_text("POS", encoding="utf-8")
+    monkeypatch.setenv("GIG_RADAR_HOME", str(tmp_path))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    seen = {}
+
+    def fake_pipeline(**kwargs):
+        seen.update(kwargs)
+        return {}
+
+    monkeypatch.setattr(cli, "run_pipeline", fake_pipeline)
+    monkeypatch.setattr(cli, "_build_adapters", lambda sources: [])
+    result = CliRunner().invoke(cli.app, ["dry-run", "--config-dir", str(tmp_path)])
+    assert result.exit_code == 0, result.output
+    assert seen["max_age_days"] == 14 and seen["max_draft_attempts"] == 3
+    assert seen["persona"]["name"] == "Your Name"

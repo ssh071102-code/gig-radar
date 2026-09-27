@@ -1,11 +1,13 @@
-top_n: 8               # step 4: only draft proposals for the top N leads per run
+top_n: 8               # step 4: only draft for the top N postings per run
 triage_model: claude-haiku-4-5-20251001
-draft_model: claude-sonnet-4-6   # use a stronger model here since only top-N leads reach this step
-min_score_to_push: 55          # leads scoring below this are not pushed
+draft_model: claude-sonnet-4-6   # use a stronger model here since only top-N postings reach this step
+min_score_to_push: 55          # postings scoring below this are not pushed
+max_age_days: 14               # postings older than this (post date, else first fetch) are never pushed; 0 disables
+max_draft_attempts: 3          # a posting whose draft keeps failing is marked failed after this many runs
 enrich: true                   # step 4: whether to fetch a public page for extra context
 
 # Interpolated into the triage and drafting prompts -- describe yourself here.
 persona:
-  name: Laurin
-  wheelhouse: AI integration, AI video, automation
-  experience: a cold newcomer with no platform rating, building reputation
+  name: Your Name
+  wheelhouse: AI integration, automation, backend development
+  experience: early-career, with a small portfolio of shipped projects
