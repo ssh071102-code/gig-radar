@@ -4,8 +4,8 @@
 ![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)
 
 gig-radar is an LLM scoring pipeline: it collects postings from several sources, scores each
-one against a profile you write using a cheap model, drafts replies for the few best matches
-with a stronger model under a per-run cap, and sends them to Telegram for review.
+one against a profile you write using a cheap model, drafts replies for the best matches (at most
+`top_n` per run) with a stronger model, and sends them to Telegram for review.
 
 The bundled config and demo use job and project postings (remote job boards, Reddit hiring
 threads) as example data. Sources, scoring criteria and the profile all live in config files.
@@ -76,7 +76,8 @@ gig-radar run
 ```
 
 `dry-run` skips the Telegram push and all persistence, but it still calls the LLM for triage
-and drafting, so it costs a few cents per run. `demo` is the only fully offline command.
+and drafting, so it makes paid API calls; the number of calls grows with the number of fresh
+postings. `demo` is the only fully offline command.
 
 The authenticated Reddit adapter needs an optional dependency: `pip install -e ".[reddit]"`,
 then set `reddit.enabled: true` in `sources.yaml` and `REDDIT_CLIENT_ID`,
@@ -140,9 +141,10 @@ Design choices:
   `settings.yaml` and your `config/positioning.md`. No person is hardcoded in the LLM layer.
 - **Failures stay visible.** Every failure path above leaves the posting in a state the next run
   can act on, and the token-bearing Telegram URL is never logged.
-- **Cost control.** Each new posting gets one cheap triage call. Only postings that clear both
-  `min_score_to_push` and the `top_n` cut reach the more expensive drafting model, so drafting
-  cost per run is bounded by `top_n`.
+- **Where the model calls go.** Every fresh posting gets one triage call on the cheap model,
+  so triage calls grow with feed volume and are not capped. Only postings that clear both
+  `min_score_to_push` and the `top_n` cut reach the more expensive drafting model, so a run
+  makes at most `top_n` drafting calls. There is no spending or token budget setting.
 
 ## Commands
 
@@ -184,8 +186,15 @@ points the SDK at any Anthropic-compatible gateway.
 - **The Upwork adapter is best-effort HTML scraping.** Upwork sits behind Cloudflare and
   unauthenticated fetches are often blocked. A blocked search is logged and skipped.
 - **Categories and reply channels are fixed in code** (`ai-integration / ai-video / automation
-  / other` and `comment / email / dm / upwork_manual`). Scoring a different domain means
-  editing `gig_radar/models.py` and the triage prompt.
+  / other` and `comment / email / dm / upwork_manual`). The lists are repeated, so changing
+  them means editing every copy:
+  - a category: the `Category` literal in `gig_radar/models.py`, the `_CATS` set and the
+    `CATEGORY:` line of `SYSTEM_TEMPLATE` in `gig_radar/brain/triage.py`. A category missing
+    from `_CATS` is silently stored as `other`.
+  - a reply channel: the `ChannelAction` literal in `gig_radar/models.py`, the `_ACTIONS` set
+    and the `CHANNEL:` line of `SYSTEM_TEMPLATE` in `gig_radar/brain/triage.py`, and the
+    channel format list in `DRAFT_SYSTEM_TEMPLATE` in `gig_radar/brain/draft.py`. A channel
+    missing from `_ACTIONS` is silently stored as `comment`.
 - **Telegram is the only push target.**
 - **Hacker News and X sources are not implemented yet.**
 
