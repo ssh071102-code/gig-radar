@@ -89,7 +89,7 @@ Reddit through its logged-out `.rss` route and does not need it.
 Each run:
 
 1. **Ingest** from pluggable sources: RSS feeds, Reddit's logged-out `.rss` route, an optional
-   praw-based Reddit adapter, and a best-effort Upwork saved-search scrape. Keyword filters
+   praw-based Reddit adapter, and a best-effort Upwork saved-search scrape (off by default). Keyword filters
    drop irrelevant items at fetch time.
 2. **Deduplicate** against everything already stored.
 3. **Triage** each new posting with one call to a cheap model: a 0 to 100 score for fit against
@@ -183,8 +183,9 @@ points the SDK at any Anthropic-compatible gateway.
 
 - **RSS is the main path.** The default config watches remote-job feeds and Reddit hiring
   boards through their logged-out `.rss` route. The praw adapter is optional.
-- **The Upwork adapter is best-effort HTML scraping.** Upwork sits behind Cloudflare and
-  unauthenticated fetches are often blocked. A blocked search is logged and skipped.
+- **The Upwork adapter is best-effort HTML scraping and is off by default.** Upwork sits behind
+  Cloudflare and unauthenticated fetches are often blocked. A blocked search is logged and skipped.
+  Check Upwork's terms before turning it on.
 - **Categories and reply channels are fixed in code** (`ai-integration / ai-video / automation
   / other` and `comment / email / dm / upwork_manual`). The lists are repeated, so changing
   them means editing every copy:
@@ -217,6 +218,3 @@ Upwork), the SQLite store, config loading, triage and drafting, Telegram push (f
 isolation, token secrecy in logs, message truncation), the CLI, the demo command, and
 pipeline integration: source isolation, dedup, dry-run purity, the scored backlog, draft
 failure retries and the age limit.
-
-## AI assistance
-This project was built with AI assistance (Claude Code). Commits it co-authored carry a `Co-Authored-By` trailer.

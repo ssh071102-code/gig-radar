@@ -6,8 +6,8 @@ reddit:
   limit_per_sub: 50
 rss:
   enabled: true
-  # browser UA: works around Reddit and others blocking feedparser's default UA
-  # (fine for low personal volume; set up a real app if you hit real rate limits)
+  # some feeds (Reddit's logged-out .rss among them) refuse feedparser's default UA;
+  # meant for low personal volume. For anything heavier, register a Reddit app and use the praw adapter.
   user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
   request_delay: 2.0      # polite delay between feeds (seconds), avoids 429s from Reddit's logged-out .rss route
   # keyword filter (only applied if configured): filter for relevance at fetch time to save downstream scoring tokens
@@ -21,6 +21,6 @@ rss:
     - https://www.reddit.com/r/jobbit/new/.rss
     - https://www.reddit.com/r/hiring/new/.rss
 upwork:
-  enabled: true         # manual review board only, best-effort
+  enabled: false        # off by default: Upwork sits behind Cloudflare; check its terms before turning this on
   saved_searches:
     - "https://www.upwork.com/nx/search/jobs/?q=AI%20automation&sort=recency"
